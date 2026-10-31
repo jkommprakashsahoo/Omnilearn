@@ -1,0 +1,92 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all unexpected paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // User Profile Rules: Only accessible by the owner
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Blanket reads forbidden for PII
+      allow create, update: if isOwner(userId)
+        && isValidId(userId)
+        && incoming().userId == request.auth.uid
+        && incoming().email is string
+        && incoming().email.size() <= 256;
+      allow delete: if isOwner(userId);
+    }
+
+    // Workspace Rules: Owned by authenticated student
+    match /workspaces/{workspaceId} {
+      allow get: if isSignedIn() && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+        && isValidId(workspaceId)
+        && incoming().userId == request.auth.uid
+        && incoming().title is string
+        && incoming().title.size() >= 2
+        && incoming().title.size() <= 120;
+      allow update: if isSignedIn()
+        && existing().userId == request.auth.uid
+        && incoming().userId == existing().userId
+        && incoming().title is string
+        && incoming().title.size() >= 2
+        && incoming().title.size() <= 120;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+
+      // Subcollection: Files
+      match /files/{fileId} {
+        allow get, list: if isSignedIn()
+          && get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.userId == request.auth.uid;
+        allow create: if isSignedIn()
+          && isValidId(fileId)
+          && get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.userId == request.auth.uid
+          && incoming().workspaceId == workspaceId
+          && incoming().originalName is string
+          && incoming().originalName.size() <= 256;
+        allow update: if isSignedIn()
+          && get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.userId == request.auth.uid
+          && incoming().workspaceId == existing().workspaceId;
+        allow delete: if isSignedIn()
+          && get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.userId == request.auth.uid;
+      }
+
+      // Subcollection: Chat Messages
+      match /messages/{messageId} {
+        allow get, list: if isSignedIn()
+          && get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.userId == request.auth.uid;
+        allow create: if isSignedIn()
+          && isValidId(messageId)
+          && get(/databases/$(database)/documents/workspaces/$(workspaceId)).data.userId == request.auth.uid
+          && incoming().workspaceId == workspaceId
+          && incoming().content is string
+          && incoming().content.size() <= 25000;
+        allow update, delete: if false; // Messages are immutable history
+      }
+    }
+  }
+}

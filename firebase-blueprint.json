@@ -1,0 +1,83 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information synchronized from Firebase Auth.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 512 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["userId", "email"]
+    },
+    "Workspace": {
+      "title": "Workspace",
+      "description": "User study workspace containing multimodal study artifacts, chat history, and synthesis guides.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 120, "minLength": 2 },
+        "description": { "type": "string", "maxLength": 500 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "studyGuide": { "type": "string", "maxLength": 50000 },
+        "createdAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "maxLength": 64 }
+      },
+      "required": ["id", "title", "userId"]
+    },
+    "FileMetadata": {
+      "title": "FileMetadata",
+      "description": "Metadata for uploaded readings, recordings, and visual diagrams.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "workspaceId": { "type": "string", "maxLength": 128 },
+        "originalName": { "type": "string", "maxLength": 256 },
+        "mimeType": { "type": "string", "maxLength": 64 },
+        "size": { "type": "number" },
+        "fileType": { "type": "string", "enum": ["document", "image", "audio", "other"] },
+        "url": { "type": "string", "maxLength": 512 },
+        "uploadedAt": { "type": "string", "maxLength": 64 },
+        "summary": { "type": "string", "maxLength": 1000 }
+      },
+      "required": ["id", "workspaceId", "originalName", "fileType"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Multimodal conversational turn stored under a workspace.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "workspaceId": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["user", "assistant", "system"] },
+        "content": { "type": "string", "maxLength": 25000 },
+        "timestamp": { "type": "string", "maxLength": 64 },
+        "tutorModel": { "type": "string", "maxLength": 64 },
+        "referencedFiles": { "type": "array" }
+      },
+      "required": ["id", "workspaceId", "role", "content"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Private user profiles restricted to authenticated owner."
+    },
+    "/workspaces/{workspaceId}": {
+      "schema": { "$ref": "#/entities/Workspace" },
+      "description": "User project workspaces holding study materials and guides."
+    },
+    "/workspaces/{workspaceId}/files/{fileId}": {
+      "schema": { "$ref": "#/entities/FileMetadata" },
+      "description": "Files uploaded to a specific workspace."
+    },
+    "/workspaces/{workspaceId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Chat history entries within a workspace."
+    }
+  }
+}

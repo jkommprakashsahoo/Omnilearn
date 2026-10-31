@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
+    { "source": "/workspace", "destination": "/api/workspace" },
+    { "source": "/workspace/(.*)", "destination": "/api/workspace/$1" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

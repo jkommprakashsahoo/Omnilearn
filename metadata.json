@@ -1,0 +1,6 @@
+{
+  "name": "OmniLearn - Multimodal Study Assistant",
+  "description": "Multimodal AI study assistant synthesizing PDF readings, lecture audio, and diagrams with interactive 3D Knowledge Space and Gemini AI.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

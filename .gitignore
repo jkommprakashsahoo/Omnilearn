@@ -1,0 +1,16 @@
+node_modules/
+build/
+dist/
+dist-server/
+uploads/
+.data/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+.aistudio/
+*_dashboard.png
+dashboard_*.png
+*_modal.png
+*_tab.png
